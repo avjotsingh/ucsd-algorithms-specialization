@@ -18,6 +18,23 @@ int partition2(vector<int> &a, int l, int r) {
   return j;
 }
 
+std::pair<int, int> partition3(vector<int> &a, int l, int r) {
+  int m = partition2(a, l, r);
+  swap(a[m], a[l]);
+  int x = a[l];
+  int i = l;
+  for(int j = l + 1; j <= m; ++j) {
+    if(a[j] < x) {
+      ++i;
+      swap(a[i], a[j]);
+    }
+  }
+
+  swap(a[i], a[l]);
+  return {i, m};
+
+}
+
 void randomized_quick_sort(vector<int> &a, int l, int r) {
   if (l >= r) {
     return;
@@ -25,10 +42,12 @@ void randomized_quick_sort(vector<int> &a, int l, int r) {
 
   int k = l + rand() % (r - l + 1);
   swap(a[l], a[k]);
-  int m = partition2(a, l, r);
+  auto m = partition3(a, l, r);
+  int m1 = m.first;
+  int m2 = m.second;
 
-  randomized_quick_sort(a, l, m - 1);
-  randomized_quick_sort(a, m + 1, r);
+  randomized_quick_sort(a, l, m1 - 1);
+  randomized_quick_sort(a, m2 + 1, r);
 }
 
 int main() {
