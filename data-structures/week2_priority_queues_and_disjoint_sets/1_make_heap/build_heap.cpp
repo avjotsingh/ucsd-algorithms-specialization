@@ -29,15 +29,13 @@ class HeapBuilder {
       cin >> data_[i];
   }
 
-  void GenerateSwaps() {
+  void GenerateSwaps_naive() {
     swaps_.clear();
     // The following naive implementation just sorts 
     // the given sequence using selection sort algorithm
     // and saves the resulting sequence of swaps.
     // This turns the given array into a heap, 
     // but in the worst case gives a quadratic number of swaps.
-    //
-    // TODO: replace by a more efficient implementation
     for (int i = 0; i < data_.size(); ++i)
       for (int j = i + 1; j < data_.size(); ++j) {
         if (data_[i] > data_[j]) {
@@ -45,6 +43,34 @@ class HeapBuilder {
           swaps_.push_back(make_pair(i, j));
         }
       }
+  }
+
+  void GenerateSwaps() {
+    swaps_.clear();
+    for(int i = data_.size() / 2 - 1; i >= 0; --i) {
+      heapify(i);
+    }
+  }
+
+  void heapify(int n) {
+    while(2*n + 1 < data_.size()) {
+      int parent = data_[n];
+      int left_child = data_[2*n + 1];
+      int right_child = (2*n + 2 < data_.size()) ? data_[2*n + 2] : 1000000001;
+
+      if(parent <= left_child && parent <= right_child)
+        break;
+      else if(left_child < parent && left_child < right_child) {
+        swap(data_[n], data_[2*n + 1]);
+        swaps_.push_back(make_pair(n, 2*n + 1));
+        n = 2*n + 1;
+      }
+      else {
+        swap(data_[n], data_[2*n + 2]);
+        swaps_.push_back(make_pair(n, 2*n + 2));
+        n = 2*n + 2;
+      }
+    }
   }
 
  public:
