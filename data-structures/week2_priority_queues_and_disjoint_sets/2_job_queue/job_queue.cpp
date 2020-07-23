@@ -62,7 +62,7 @@ class JobQueue {
     for(int i = 0; i < jobs_.size(); ++i) {
       if(available_workers.empty()) {
         last_finish_time = finish_times.top().second;
-        while(finish_times.top().second == last_finish_time) {
+        while(!finish_times.empty() && finish_times.top().second == last_finish_time) {
           available_workers.push(finish_times.top().first);
           finish_times.pop();
         }
@@ -72,7 +72,6 @@ class JobQueue {
       assigned_workers_[i] = available_workers.top();
       start_times_[i] = last_finish_time;
       available_workers.pop();
-      std::cout << i << '\n';
     }
   }
 
