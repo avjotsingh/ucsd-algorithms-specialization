@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <queue>
 
 using std::vector;
 using std::cin;
@@ -28,8 +29,7 @@ class JobQueue {
       cin >> jobs_[i];
   }
 
-  void AssignJobs() {
-    // TODO: replace this code with a faster algorithm.
+  void AssignJobs_naive() {
     assigned_workers_.resize(jobs_.size());
     start_times_.resize(jobs_.size());
     vector<long long> next_free_time(num_workers_, 0);
@@ -43,6 +43,36 @@ class JobQueue {
       assigned_workers_[i] = next_worker;
       start_times_[i] = next_free_time[next_worker];
       next_free_time[next_worker] += duration;
+    }
+  }
+
+  void AssignJobs() {
+    assigned_workers_.resize(jobs_.size());
+    start_times_.resize(jobs_.size());
+    
+    std::priority_queue<int, std::vector<int>, std::greater<int>> available_workers;
+    auto comparator = [](std::pair<int, long long> p1, std::pair<int, long long> p2) { return p1.second > p2.second; };
+    std::priority_queue<std::pair<int, long long>, std::vector<std::pair<int, long long>>, decltype(comparator)> finish_times(comparator);
+
+    for(int i = 0; i < num_workers_; ++i) {
+      available_workers.push(i);
+    }
+
+    long long last_finish_time = 0;
+    for(int i = 0; i < jobs_.size(); ++i) {
+      if(available_workers.empty()) {
+        last_finish_time = finish_times.top().second;
+        while(finish_times.top().second == last_finish_time) {
+          available_workers.push(finish_times.top().first);
+          finish_times.pop();
+        }
+      }
+
+      finish_times.push(std::make_pair(available_workers.top(), last_finish_time + jobs_[i]));
+      assigned_workers_[i] = available_workers.top();
+      start_times_[i] = last_finish_time;
+      available_workers.pop();
+      std::cout << i << '\n';
     }
   }
 
