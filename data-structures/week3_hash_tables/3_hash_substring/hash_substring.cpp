@@ -102,12 +102,11 @@ Answer solve(const string &s, const string &t) {
 
 void test_solution() {
 	string s, t;
-	size_t l1 = 1 + rand() % 100000;
-	size_t l2 = 1 + rand() % 100000;
 	for(size_t i = 0; i < 100000; ++i)
 		s.append(string(1, 'a' + rand() % 25));
 	for(size_t i = 0; i < 100000; ++i)
 		t.append(string(1, 'a' + rand() % 25));
+	
 	auto start = high_resolution_clock::now();
 	auto ans = solve(s, t);
 	auto stop = high_resolution_clock::now();
