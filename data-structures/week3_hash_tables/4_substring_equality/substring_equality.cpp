@@ -5,8 +5,8 @@ using namespace std;
 
 class Solver {
 	string s;
-	const size_t m1 = 1000000007;
-	const size_t m2 = 1000000009;
+	const size_t m1 = 5000007;
+	const size_t m2 = 5000009;
 	size_t x;
 	vector<size_t> H1;
 	vector<size_t> H2;
@@ -14,25 +14,20 @@ class Solver {
 	vector<size_t> powx2;
 public:	
 	Solver(string s) : s(s), 
-					x(1 + rand() % 1000000000), 
-					H1(vector<size_t>(s.size())), 
-					H2(vector<size_t>(s.size())), 
-					powx1(vector<size_t>(s.size() + 1)),
-					powx2(vector<size_t>(s.size() + 1)) {	
+					x(1 + rand() % 1000), 
+					H1(vector<size_t>(1 + s.size())), 
+					H2(vector<size_t>(1 + s.size())), 
+					powx1(vector<size_t>(1 + s.size())),
+					powx2(vector<size_t>(1 + s.size())) {	
 		// initialization, precalculation
-		H1[0] = s[0] % m1;
-		H2[0] = s[0] % m2;
-		powx1[0] = 1;
-		powx2[0] = 1;
-		for(size_t i = 1; i < s.size(); ++i) {
-			H1[i] = (x * H1[i - 1] + s[i]) % m1;
-			H2[i] = (x * H2[i - 1] + s[i]) % m2;
+		H1[0] = H2[0] = 0;
+		powx1[0] = powx2[0] = 1;
+		for(size_t i = 1; i <= s.size(); ++i) {
+			H1[i] = (x * H1[i - 1] + s[i - 1]) % m1;
+			H2[i] = (x * H2[i - 1] + s[i - 1]) % m2;
 			powx1[i] = (x * powx1[i - 1]) % m1;
 			powx2[i] = (x * powx2[i - 1]) % m2;
 		}
-
-		powx1[s.size()] = (x * powx1[s.size() - 1]) % m1;
-		powx2[s.size()] = (x * powx2[s.size() - 1]) % m2;
 	}
 
 	bool ask_naive(int a, int b, int l) {
@@ -40,18 +35,17 @@ public:
 	}
 
 	bool ask(int a, int b, int l) {
-		size_t hash_a1 = (H1[a + l - 1] - powx1[l] * H1[a - 1]) % m1;
-		if(hash_a1 < 0)
-			hash_a1 += m1;
-		size_t hash_b1 = (H1[b + l - 1] - powx1[l] * H1[b - 1]) % m1;
-		if(hash_b1 < 0)
-			hash_b1 += m1;
-		size_t hash_a2 = (H2[a + l - 1] - powx2[l] * H2[a - 1]) % m2;
-		if(hash_a2 < 0)
-			hash_a2 += m2;
-		size_t hash_b2 = (H2[b + l - 1] - powx2[l] * H2[b - 1]) % m2;
-		if(hash_b2 < 0)
-			hash_b2 += m2;
+		size_t hash_a1 = (powx1[l] * H1[a]) % m1;
+		hash_a1 = (H1[a + l] >= hash_a1) ? H1[a + l] - hash_a1 : (H1[a + l] + m1 - hash_a1);
+
+		size_t hash_b1 = (powx1[l] * H1[b]) % m1;
+		hash_b1 = (H1[b + l] >= hash_b1) ? H1[b + l] - hash_b1 : (H1[b + l] + m1 - hash_b1);
+		
+		size_t hash_a2 = (powx2[l] * H2[a]) % m2;
+		hash_a2 = (H2[a + l] >= hash_a2) ? H2[a + l] - hash_a2 : (H2[a + l] + m2 - hash_a2);
+
+		size_t hash_b2 = (powx2[l] * H2[b]) % m2;
+		hash_b2 = (H2[b + l] >= hash_b2) ? H2[b + l] - hash_b2 : (H2[b + l] + m2 - hash_b2);
 
 		return (hash_a1 == hash_b1 && hash_a2 == hash_b2);
 	}

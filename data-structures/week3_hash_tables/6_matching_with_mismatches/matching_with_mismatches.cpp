@@ -4,11 +4,12 @@
 using namespace std;
 
 vector<int> solve(int k, const string &text, const string &pattern) {
+//	std::cout << text << " " << pattern << "\n";
 	vector<int> pos;
-	vector<size_t> thash_1(text.size());
-	vector<size_t> thash_2(text.size());
-	vector<size_t> phash_1(pattern.size());
-	vector<size_t> phash_2(pattern.size());
+	vector<size_t> thash_1(1 + text.size());
+	vector<size_t> thash_2(1 + text.size());
+	vector<size_t> phash_1(1 + pattern.size());
+	vector<size_t> phash_2(1 + pattern.size());
 	vector<size_t> powx_1(1 + pattern.size());
 	vector<size_t> powx_2(1 + pattern.size());
 
@@ -16,7 +17,7 @@ vector<int> solve(int k, const string &text, const string &pattern) {
 	size_t x2 = 119;
 	size_t m1 = 200007;
 	size_t m2 = 200009;
-
+//	std::cout << "beginning to solve...\n";
 	thash_1[0] = 0;
 	thash_2[0] = 0;
 	for(size_t i = 1; i <= text.size(); ++i) {
@@ -99,4 +100,6 @@ int main() {
 			cout << " " << x;
 		cout << "\n";
 	}
+
+	return 0;
 }
