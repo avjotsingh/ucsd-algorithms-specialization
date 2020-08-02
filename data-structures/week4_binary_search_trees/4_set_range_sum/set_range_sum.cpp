@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <iostream>
 
 // Splay tree implementation
 
@@ -157,15 +158,23 @@ void insert(int x) {
   root = merge(merge(left, new_vertex), right);
 }
 
-void erase(int x) {                   
-  // Implement erase yourself
-
+void erase(int x) {     
+  bool find(int);
+  if(!find(x))
+    return;
+  else {
+    root = merge(root->left, root->right);
+    if(root != NULL)
+      root->parent = NULL;
+  }
 }
 
 bool find(int x) {  
-  // Implement find yourself
-
-  return false;
+  Vertex* v = find(root, x);
+  if(v == NULL || v->key != x)
+    return false;
+  else
+    return true;
 }
 
 long long sum(int from, int to) {
@@ -175,8 +184,13 @@ long long sum(int from, int to) {
   split(root, from, left, middle);
   split(middle, to + 1, middle, right);
   long long ans = 0;
-  // Complete the implementation of sum
-  
+  if(middle != NULL) {
+    ans = middle->sum;
+    root = merge(merge(left, middle), right);
+  }
+  else {
+    root = merge(left, right);
+  }
   return ans;  
 }
 

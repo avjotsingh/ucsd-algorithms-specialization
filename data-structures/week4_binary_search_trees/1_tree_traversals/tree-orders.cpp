@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <stack>
 #if defined(__unix__) || defined(__APPLE__)
 #include <sys/resource.h>
 #endif
@@ -27,28 +28,47 @@ public:
     }
   }
 
+  void inorder_traversal(int root, vector<int> &result) {
+    if(root == -1)
+      return;
+    inorder_traversal(left[root], result);
+    result.push_back(key[root]);
+    inorder_traversal(right[root], result);
+  }
 
   vector <int> in_order() {
     vector<int> result;
-    // Finish the implementation
-    // You may need to add a new recursive method to do that
-
+    inorder_traversal(0, result);
     return result;
+  }
+
+  void preorder_traversal(int root, vector<int> &result) {
+    if(root == -1)
+      return;
+
+    result.push_back(key[root]);
+    preorder_traversal(left[root],result);
+    preorder_traversal(right[root], result);
   }
 
   vector <int> pre_order() {
     vector<int> result;    
-    // Finish the implementation
-    // You may need to add a new recursive method to do that
-    
+    preorder_traversal(0, result);
     return result;
+  }
+
+  void postorder_traversal(int root, vector<int> &result) {
+    if(root == -1)
+      return;
+
+    postorder_traversal(left[root], result);
+    postorder_traversal(right[root], result);
+    result.push_back(key[root]);
   }
 
   vector <int> post_order() {
     vector<int> result;
-    // Finish the implementation
-    // You may need to add a new recursive method to do that
-    
+    postorder_traversal(0, result);
     return result;
   }
 };
