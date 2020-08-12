@@ -9,7 +9,62 @@ using std::pair;
 using std::priority_queue;
 
 void shortest_paths(vector<vector<int> > &adj, vector<vector<int> > &cost, int s, vector<long long> &distance, vector<int> &reachable, vector<int> &shortest) {
-  //write your code here
+  int V = adj.size();
+  long long inf = 1000000000001;
+
+  for(int i = 0; i < V; ++i) {
+    distance[i] = inf;
+    reachable[i] = false;
+    shortest[i] = 1;
+  }
+  distance[s] = 0;
+  reachable[s] = true;
+  shortest[s] = 1;
+  /*
+  * Run V - 1 iterations of Bellman Ford's algorithm
+  * if an edge (u, v) can be relaxed, it means v is reachable from src
+  */
+  for(int i = 0; i < V - 1; ++i) {
+    for(int j = 0; j < V; ++j) {
+      for(int k = 0; k < adj[j].size(); ++k) {
+        int v = adj[j][k];
+        if(distance[j] != inf && distance[v] > distance[j] + cost[j][k]) {
+          reachable[v] = true;
+          distance[v] = distance[j] + cost[j][k];
+        }
+      }
+    }
+  }
+
+  /*
+  * Run one more iteration of Bellman Ford's algorithm to detect the vertices that can be reached from a negative weight cycle
+  * One of these vertices will definitely lie on a cycle
+  * Run BFS/DFS on all these vertices to detect the set of vertices which can be relaxed further
+  * This set of vertices after BFS is reachable from the negative weight cycle
+  */
+  queue<int> to_explore;
+  vector<int> visited(V, false);
+  for(int j = 0; j < V; ++j) {
+    for(int k = 0; k < adj[j].size(); ++k) {
+      int v = adj[j][k];
+      if(distance[j] != inf && distance[v] > distance[j] + cost[j][k]) {
+        to_explore.push(v);
+      }
+    }
+  }
+
+  /* BFS */
+  while(!to_explore.empty()) {
+    int u = to_explore.front();
+    to_explore.pop();
+    visited[u] = true;
+    shortest[u] = 0;
+    for(auto v : adj[u]) {
+      if(!visited[v]) {
+        to_explore.push(v);
+      }
+    }
+  }
 }
 
 int main() {
