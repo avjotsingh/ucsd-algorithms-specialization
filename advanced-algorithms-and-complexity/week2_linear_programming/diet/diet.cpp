@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cmath>
 #include <set>
+#include <float.h>
 using namespace std;
 
 typedef vector<vector<double>> Matrix;
@@ -141,8 +142,10 @@ public:
     b.push_back(SUM_MAX);
 
     int result = -1;
-    Column answer;
-    double optimal_value = 0.0;
+    Column bounded_answer;
+    Column unbounded_answer;
+    double bounded_optimal = -DBL_MAX;
+    double unbounded_optimal = -DBL_MAX;
 
     //Select m inequalities from the set of all inequalities and treat them as equalities
     set<int> elements;
@@ -186,26 +189,37 @@ public:
           continue;
         }
 
-        //If all other inequalities are satisfied, check for boundedness
+        result = 0;
+        //If all other inequalities are satisfied, check if all variables add up to SUM_MAX
+        bool large_sum = false;
         double sum_amounts = 0.0;
         for(auto x: solution.second) sum_amounts += x;
-        if(sum_amounts >= SUM_MAX - EPS && sum_amounts <= SUM_MAX + EPS) {
-          result = 1;
-          break;
-        }
+        if(sum_amounts >= SUM_MAX - EPS && sum_amounts <= SUM_MAX + EPS) large_sum = true;
 
-        // If all other inequalities are satisfied and solution is bounded, compute the value of objective function
-        result = 0;
+        // Compute the value of objective function and check for boundedness
         double val = 0.0;
         for(int i = 0; i < solution.second.size(); ++i) val += c[i]*solution.second[i];
-        if(val > optimal_value) {
-          optimal_value = val;
-          answer = solution.second;
+        if(large_sum && val > unbounded_optimal) {
+          unbounded_optimal = val;
+          unbounded_answer = solution.second;
+        }
+        else if(!large_sum && val > bounded_optimal) {
+          bounded_optimal = val;
+          bounded_answer = solution.second;
         }
       }
     }
 
-    return make_pair(result, answer);
+    if(result != -1) {
+      if(bounded_optimal >= unbounded_optimal) {
+        return make_pair(0, bounded_answer);
+      }
+      else {
+        return make_pair(1, Column());
+      }
+    }
+
+    return make_pair(-1, Column());
   }
 };
 
