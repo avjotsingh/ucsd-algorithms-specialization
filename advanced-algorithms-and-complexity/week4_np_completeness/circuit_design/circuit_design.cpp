@@ -8,54 +8,86 @@ struct Clause {
 
 struct TwoSatisfiability {
 private:
-    void dfs_explore(int v, vector<vector<int>> *adj, vector<bool> *visited, vector<int> *newly_explored = nullptr, vector<int> *finish_order = nullptr) {
-        stack<int> s;
-        s.push(v);
-        while(!s.empty()) {
-            auto x = s.top();
-            *(visited + x) = true;
-            for(auto y: adj[x]) {
-                if(*(visited + y) == false) {
-                    s.push(y);
-                }
-            }
-            if(s.top() == x) {
-                s.pop();
-                if(newly_explored) {
-                    newly_explored->push_back(x);
-                }
-                if(finish_order) {
-                    *finish_order->push_back(x);
-                }
-            }
+    vector<vector<int>> adj_list;
+    unordered_map<int, int> vid;
+    unordered_map<int, int> rvid;
+
+    void construct_adjacency_list() {
+        for(int i = 0; i < clauses.size(); ++i) {
+            adj_list[vid[-clauses[i].firstVar]].push_back(vid[clauses[i].secondVar]);
+            adj_list[vid[-clauses[i].secondVar]].push_back(vid[clauses[i].firstVar]);
         }
     }
 
-    void dfs_normal(vector<vector<int>> *adj, vector<int> *finish_order) {
-        vector<bool> visited(adj->size(), false);
-        for(int i = 1; i < adj->size(); ++i) {
-            if(!visited[i])  {
-                dfs_explore(i, adj, &visited, nullptr, finish_order);
+    vector<pair<int, int>> dfs() {
+        vector<pair<int, int>> finish_times;
+        vector<bool> visited(adj_list.size(), false);
+        for(int i = 1; i < adj_list.size(); ++i) {
+            finish_times.push_back({i, INT_MAX});
+        }
+        int time = 0;
+        for(int i = 1; i < adj_list.size(); ++i) {
+            cout << "i:" << i << endl;
+            if(!visited[i]) {
+                cout << "dfs " << i << endl;
+                stack<int> s;
+                s.push(i);
+                while(!s.empty()) {
+                    int u = s.top();
+                    cout << "u " << u << endl;
+                    visited[u] = true;
+                    for(auto v: adj_list[u]) {
+                        if(!visited[v]) {
+                            s.push(v);
+                        }
+                    }
+                    if(u == s.top()) {
+                        s.pop();
+                        if(finish_times[u - 1].second == INT_MAX) {
+                            ++time;
+                            finish_times[u - 1].second = time;
+                        }
+                    }
+                }
+            }
+            else {
+                cout << "visited " << i << endl;
             }
         }
+        cout << "done DFS\n";
+        return finish_times;
     }
 
-    vector<int> dfs_check_satisfiable(vector<vector<int>> *adj, vector<int> *finish_order, vector<int> *assignment) {
-        isSatisfiable = true;
-        vector<int> assignment(adj->size(), -1);
-        vector<bool> visited(adj->size(), false);
-        for(auto iter = finish_order.begin(); iter != finish_order.end(); ++iter) {
-            auto v = *iter;
-            vector<int> newly_explored;
-            dfs_explore(v, adj, &visited, &newly_explored);
-            for(auto x: newly_explored) {
-                auto x_bar = x > numVars ?  x - numVars : x + numVars;
-                if(assignment[x] == -1) {
-                    assignment[x] = 1;
-                    assignment[x_bar] = 0;
-                }
-                else if(assignment[x] == 0) {
-                    return false;
+    bool dfs_and_assign(vector<pair<int, int>> finish_times, vector<int> &results) {
+        for(int i = 0; i < results.size(); ++i) {
+            results[i] = -1;
+        }
+        vector<bool> visited(adj_list.size(), false);
+        for(auto e: finish_times) {
+            auto x = e.first;
+            if(!visited[x]) {
+                stack<int> s;
+                s.push(x);
+                while(!s.empty()) {
+                    int u = s.top();
+                    int uid = rvid[u];
+                    if(uid < 0 && results[-uid] == -1) {
+                        results[-uid] = 0;
+                    }
+                    else if(uid > 0 && results[uid] == -1) {
+                        results[uid] == 1;
+                    }
+                    else if((uid < 0 && results[-uid] == 1) || (uid > 0 && results[uid] == 0)) {
+                        return false;
+                    }
+                    for(auto v: adj_list[u]) {
+                        if(!visited[v]) {
+                            s.push(v);
+                        }
+                    }
+                    if(u == s.top()) {
+                        s.pop();
+                    }
                 }
             }
         }
@@ -66,34 +98,23 @@ public:
     int numVars;
     vector<Clause> clauses;
 
-    TwoSatisfiability(int n, int m) :
-        numVars(n),
-        clauses(m)
-    {  }
+    TwoSatisfiability(int n, int m): numVars(n), clauses(m), adj_list(vector<vector<int>>(2*n + 1, vector<int>())) {
+        for(int i = 1; i <= numVars; ++i) {
+            vid[i] = i;
+            vid[-i] = i + numVars;
+            rvid[i] = i;
+            rvid[i + numVars] = -i;
+        }
+    }
 
     bool isSatisfiable(vector<int>& result) {
-        vector<vector<int>> adj(2*numVars + 1, vector<int>());
-        for(int i = 0; i < clauses.size(); ++i) {
-            int l1 = clauses[i].firstVar > 0 ? clauses[i].firstVar : clauses[i].firstVar + numVars;
-            int l2 = clauses[i].secondVar > 0 ? clauses[i].secondVar : clauses[i].secondVar + numVars;
-            int l1_bar = l1 > numVars ? l1 - numVars : l1 + numVars;
-            int l2_bar = l2 > numVars ? l2 - numVars : l2 + numVars;
-            adj[l1_bar].push_back(l2);
-            adj[l2_bar].push_back(l1);
-        }
+        construct_adjacency_list();
+        cout << "adj list done\n";
+        auto finish_times = dfs();
+        cout << "one dfs done\n";
+        sort(finish_times.begin(), finish_times.end(), [](pair<int, int> a, pair<int, int> b) { return a.second < b.second; });
 
-        vector<int> dfs_finish_order;
-        dfs_normal(&adj, &dfs_finish_order);
-
-        bool satisfiable;
-        auto assignment = dfs_check_satisfiable(&adj, &dfs_finish_order, &satisfiable);
-        if(satisfiable) {
-            for(int i = 1; i <= numVars; ++i) {
-                result[i - 1] = assignment[i];
-            }
-        }
-
-        return satisfiable;
+        return dfs_and_assign(finish_times, result);
     }
 };
 
