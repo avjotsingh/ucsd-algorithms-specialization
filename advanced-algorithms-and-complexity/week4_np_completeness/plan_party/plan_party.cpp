@@ -27,23 +27,39 @@ Graph ReadTree() {
     return tree;
 }
 
-void dfs(const Graph &tree, int vertex, int parent) {
-    for (int child : tree[vertex].children)
-        if (child != parent)
-            dfs(tree, child, vertex);
+int dfs(const Graph &tree, Sum &max_fun, int vertex, int parent) {
+    if(max_fun[vertex] != -1) {
+        return max_fun[vertex];
+    }
 
-    // This is a template function for processing a tree using depth-first search.
-    // Write your code here.
-    // You may need to add more parameters to this function for child processing.
+    int fun_1, fun_2;
+    fun_1 = 0;
+    fun_2 = tree[vertex].weight;
+    for (int child : tree[vertex].children) {
+        if (child != parent) {
+            fun_1 += dfs(tree, max_fun, child, vertex);
+        }
+        for(int grandchild : tree[child].children) {
+            fun_2 += dfs(tree, max_fun, grandchild, child);
+        }
+    }
+
+    if(fun_1 > fun_2) {
+        max_fun[vertex] = fun_1;
+    }
+    else {
+        max_fun[vertex] = fun_2;
+    }
+
+    return max_fun[vertex];
 }
 
 int MaxWeightIndependentTreeSubset(const Graph &tree) {
     size_t size = tree.size();
     if (size == 0)
         return 0;
-    dfs(tree, 0, -1);
-    // You must decide what to return.
-    return 0;
+    Sum max_fun(size, -1);
+    return dfs(tree, max_fun, 0, -1);
 }
 
 int main() {
