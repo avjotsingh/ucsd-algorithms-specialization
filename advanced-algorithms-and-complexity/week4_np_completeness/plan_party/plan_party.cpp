@@ -1,5 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <sys/resource.h>
+
+using namespace std;
 
 struct Vertex {
     int weight;
@@ -32,25 +35,20 @@ int dfs(const Graph &tree, Sum &max_fun, int vertex, int parent) {
         return max_fun[vertex];
     }
 
-    int fun_1, fun_2;
-    fun_1 = 0;
-    fun_2 = tree[vertex].weight;
+    int fun_1 = 0;
+    int fun_2 = tree[vertex].weight;
     for (int child : tree[vertex].children) {
         if (child != parent) {
             fun_1 += dfs(tree, max_fun, child, vertex);
-        }
-        for(int grandchild : tree[child].children) {
-            fun_2 += dfs(tree, max_fun, grandchild, child);
+            for(int grandchild : tree[child].children) {
+               if(grandchild != vertex) {
+                    fun_2 += dfs(tree, max_fun, grandchild, child);
+                }
+            }
         }
     }
 
-    if(fun_1 > fun_2) {
-        max_fun[vertex] = fun_1;
-    }
-    else {
-        max_fun[vertex] = fun_2;
-    }
-
+    max_fun[vertex] = max(fun_1, fun_2);
     return max_fun[vertex];
 }
 

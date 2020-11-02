@@ -1,120 +1,97 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-struct Clause {
-    int firstVar;
-    int secondVar;
+struct Node {
+    int id = -1;
+    int low = -1;
+    bool on_stack = false;
+    vector<int> neighbours;
+    unordered_map<int, bool> assignment;
 };
 
-struct TwoSatisfiability {
+class TwoSatisfiability {
 private:
-    vector<vector<int>> adj_list;
-    unordered_map<int, int> vid;
-    unordered_map<int, int> rvid;
-
-    void construct_adjacency_list() {
-        for(int i = 0; i < clauses.size(); ++i) {
-            adj_list[vid[-clauses[i].firstVar]].push_back(vid[clauses[i].secondVar]);
-            adj_list[vid[-clauses[i].secondVar]].push_back(vid[clauses[i].firstVar]);
-        }
-    }
-
-    vector<pair<int, int>> dfs() {
-        vector<pair<int, int>> finish_times;
-        vector<bool> visited(adj_list.size(), false);
-        for(int i = 1; i < adj_list.size(); ++i) {
-            finish_times.push_back({i, INT_MAX});
-        }
-        int time = 0;
-        for(int i = 1; i < adj_list.size(); ++i) {
-            cout << "i:" << i << endl;
-            if(!visited[i]) {
-                cout << "dfs " << i << endl;
-                stack<int> s;
-                s.push(i);
-                while(!s.empty()) {
-                    int u = s.top();
-                    cout << "u " << u << endl;
-                    visited[u] = true;
-                    for(auto v: adj_list[u]) {
-                        if(!visited[v]) {
-                            s.push(v);
-                        }
-                    }
-                    if(u == s.top()) {
-                        s.pop();
-                        if(finish_times[u - 1].second == INT_MAX) {
-                            ++time;
-                            finish_times[u - 1].second = time;
-                        }
-                    }
-                }
-            }
-            else {
-                cout << "visited " << i << endl;
-            }
-        }
-        cout << "done DFS\n";
-        return finish_times;
-    }
-
-    bool dfs_and_assign(vector<pair<int, int>> finish_times, vector<int> &results) {
-        for(int i = 0; i < results.size(); ++i) {
-            results[i] = -1;
-        }
-        vector<bool> visited(adj_list.size(), false);
-        for(auto e: finish_times) {
-            auto x = e.first;
-            if(!visited[x]) {
-                stack<int> s;
-                s.push(x);
-                while(!s.empty()) {
-                    int u = s.top();
-                    int uid = rvid[u];
-                    if(uid < 0 && results[-uid] == -1) {
-                        results[-uid] = 0;
-                    }
-                    else if(uid > 0 && results[uid] == -1) {
-                        results[uid] == 1;
-                    }
-                    else if((uid < 0 && results[-uid] == 1) || (uid > 0 && results[uid] == 0)) {
-                        return false;
-                    }
-                    for(auto v: adj_list[u]) {
-                        if(!visited[v]) {
-                            s.push(v);
-                        }
-                    }
-                    if(u == s.top()) {
-                        s.pop();
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-public:
     int numVars;
-    vector<Clause> clauses;
+    unordered_map<int, Node> vertices;
+    int dfs_id;
+    stack<int> stk;
+    unordered_map<int, int> assignment;
+    bool satisfiable;
+ 
+public:
 
-    TwoSatisfiability(int n, int m): numVars(n), clauses(m), adj_list(vector<vector<int>>(2*n + 1, vector<int>())) {
-        for(int i = 1; i <= numVars; ++i) {
-            vid[i] = i;
-            vid[-i] = i + numVars;
-            rvid[i] = i;
-            rvid[i + numVars] = -i;
+    TwoSatisfiability(int n): numVars(n), vertices(unordered_map<int, Node>(2*n)), dfs_id(1), satisfiable(true) { }
+
+    void add_clause(int firstVar, int secondVar) {
+        vertices[-firstVar].neighbours.push_back(secondVar);
+        vertices[-secondVar].neighbours.push_back(firstVar);
+    }
+
+    void dfs(int i) {
+        vertices[i].id = vertices[i].low = ++dfs_id;
+        vertices[i].on_stack = true;
+        stk.push(i);
+
+        for(auto v: vertices[i].neighbours) {
+            if(vertices[v].id == -1) {
+                dfs(v);
+                vertices[i].low = min(vertices[i].low, vertices[v].low);
+            }
+            else if(vertices[v].on_stack) {
+                vertices[i].low = min(vertices[i].low, vertices[v].low);
+            }
+        }
+
+        if(vertices[i].low == vertices[i].id) {
+            int w;
+            do {
+                w = stk.top();
+                stk.pop();
+                
+                vertices[w].low = vertices[i].low;
+                vertices[w].on_stack = false;
+                if(vertices[w].low == vertices[-w].low) {
+                    satisfiable = false;
+                    return;
+                }
+
+                if(assignment.find(w) == assignment.end()) {                
+                    assignment[w] = 1;
+                    assignment[-w] = 0;
+                }
+            } while(w != i);
         }
     }
 
-    bool isSatisfiable(vector<int>& result) {
-        construct_adjacency_list();
-        cout << "adj list done\n";
-        auto finish_times = dfs();
-        cout << "one dfs done\n";
-        sort(finish_times.begin(), finish_times.end(), [](pair<int, int> a, pair<int, int> b) { return a.second < b.second; });
+    void solve() {
+        for(int i = -numVars; i <= numVars; ++i) {
+            if(i != 0 && vertices[i].id == -1) {
+                dfs(i);
+            }
+        }
+    }
 
-        return dfs_and_assign(finish_times, result);
+    void print_solution() {
+        if(!satisfiable) {
+            cout << "UNSATISFIABLE" << endl;
+        }
+        else {
+            cout << "SATISFIABLE" << endl;
+            for(int i = 1; i <= numVars; ++i) {
+                if(assignment[i]) {
+                    cout << i;
+                }
+                else {
+                    cout << -i;
+                }
+                if(i < numVars) {
+                    cout << " ";
+                }
+                else {
+                    cout << endl;
+                }
+            }
+        }
     }
 };
 
@@ -123,29 +100,15 @@ int main() {
 
     int n, m;
     cin >> n >> m;
-    TwoSatisfiability twoSat(n, m);
+    TwoSatisfiability twoSat(n);
     for (int i = 0; i < m; ++i) {
-        cin >> twoSat.clauses[i].firstVar >> twoSat.clauses[i].secondVar;
+        int firstVar, secondVar;
+        cin >> firstVar >> secondVar;
+        twoSat.add_clause(firstVar, secondVar);
     }
 
-    vector<int> result(n);
-    if (twoSat.isSatisfiable(result)) {
-        cout << "SATISFIABLE" << endl;
-        for (int i = 1; i <= n; ++i) {
-            if (result[i-1]) {
-                cout << -i;
-            } else {
-                cout << i;
-            }
-            if (i < n) {
-                cout << " ";
-            } else {
-                cout << endl;
-            }
-        }
-    } else {
-        cout << "UNSATISFIABLE" << endl;
-    }
+    twoSat.solve();
+    twoSat.print_solution();
 
     return 0;
 }
