@@ -34,18 +34,61 @@ int letterToIndex (char letter)
 	}
 }
 
+void constructTrie(vector<string> patterns, vector<Node> &trie) {
+	trie.push_back(Node());
+	for(auto pattern : patterns) {
+		int current_node = 0;
+		for(auto symbol : pattern) {
+			int idx = letterToIndex(symbol);
+			if(trie[current_node].next[idx] != NA) {
+				current_node = trie[current_node].next[idx];
+			}
+			else {
+				trie.push_back(Node());
+				trie[current_node].next[idx] = trie.size() - 1;
+				current_node = trie.size() - 1;
+			}
+		}
+		trie[current_node].patternEnd = true;
+	}
+}
+
+
 vector <int> solve (string text, int n, vector <string> patterns)
 {
 	vector <int> result;
-
-	// write your code here
-
+	vector<Node> trie;
+	constructTrie(patterns, trie);
+	for(int i = 0; i < text.size(); ++i) {
+		int j = i;
+		int current_node = 0;
+		while(true) {
+			if(trie[current_node].patternEnd) {
+				result.push_back(i);
+				break;
+			}
+			else if(j == text.size()) {
+				break;
+			}
+			else {
+				auto symbol = text[j];
+				int idx = letterToIndex(symbol);
+				if(trie[current_node].next[idx] == NA) {
+					break;
+				}
+				else {
+					current_node = trie[current_node].next[idx];
+					j++;
+				}
+			}
+		}
+	}
 	return result;
 }
 
 int main (void)
 {
-	string t;
+	string text;
 	cin >> text;
 
 	int n;
@@ -58,7 +101,7 @@ int main (void)
 	}
 
 	vector <int> ans;
-	ans = solve (t, n, s);
+	ans = solve (text, n, patterns);
 
 	for (int i = 0; i < (int) ans.size (); i++)
 	{
